@@ -1,58 +1,27 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.orm import Session
+from app.database import engine, Base
+from app.routers import auth, attendance, admin  # Pastikan 'admin' ada di sini
 
-from app.database import engine, Base, get_db
-import app.models as models
-import app.schemas as schemas
-
-# Import kedua router: attendance dan auth
-from app.routers import attendance, auth
-
-# Buat tabel otomatis di PostgreSQL jika belum ada
+# Membuat tabel database jika belum ada
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(
-    title="Absensi App API",
-    description="API Backend untuk Sistem Absensi Karyawan",
-    version="1.0.0"
-)
+app = FastAPI(title="Absensi App API")
 
-# CORS Policy agar Frontend Next.js bisa berkomunikasi dengan FastAPI
+# Konfigurasi CORS untuk Next.js frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Register Router Auth dan Attendance
+# Daftarkan Router
 app.include_router(auth.router)
 app.include_router(attendance.router)
+app.include_router(admin.router)  # <-- Pastikan baris ini ada!
 
 @app.get("/")
 def read_root():
-    return {"status": "success", "message": "Backend Absensi App Berjalan!"}
-
-@app.get("/health-check")
-def health_check(db: Session = Depends(get_db)):
-    return {"database": "connected", "status": "ok"}
-
-# Endpoint sementara buat nambah User (jika registrasi manual via Swagger)
-@app.post("/users/", response_model=schemas.UserResponse, tags=["Users"])
-def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    db_user = db.query(models.User).filter(models.User.email == user.email).first()
-    if db_user:
-        raise HTTPException(status_code=400, detail="Email sudah terdaftar")
-    
-    new_user = models.User(
-        name=user.name,
-        email=user.email,
-        password_hash=user.password,
-        role=user.role
-    )
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    return new_user
+    return {"message": "API Absensi Berjalan Normal"}

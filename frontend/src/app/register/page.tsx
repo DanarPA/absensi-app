@@ -3,131 +3,135 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Clock, AlertCircle, CheckCircle, UserPlus } from "lucide-react";
+import { UserPlus, Clock } from "lucide-react";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [name, setName] = useState<string>("");
-  const [email, setEmail] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
-  const [loading, setLoading] = useState<boolean>(false);
-  const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    role: "packer",
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const API_URL = "http://127.0.0.1:8000";
 
-  const handleRegister = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setMessage(null);
+    setError("");
 
     try {
       const res = await fetch(`${API_URL}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name,
-          email,
-          password,
-          role: "employee",
-        }),
+        body: JSON.stringify(formData),
       });
+
       const data = await res.json();
 
       if (res.ok) {
-        setMessage({ text: "Pendaftaran berhasil! Mengalihkan ke halaman login...", type: "success" });
-        setTimeout(() => {
-          router.push("/login");
-        }, 1500);
+        router.push("/login");
       } else {
-        const detail = data.detail;
-        const errorText =
-          typeof detail === "string"
-            ? detail
-            : Array.isArray(detail)
-            ? detail.map((err) => err.msg).join(", ")
-            : "Pendaftaran gagal";
-        setMessage({ text: errorText, type: "error" });
+        setError(data.detail || "Registrasi gagal");
       }
-    } catch (error) {
-      setMessage({ text: "Gagal terhubung ke server backend", type: "error" });
+    } catch (err) {
+      setError("Gagal terhubung ke server backend");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <main className="min-h-screen bg-slate-900 text-slate-100 flex items-center justify-center p-6">
-      <div className="w-full max-w-md bg-slate-800/60 border border-slate-700 rounded-2xl p-8 backdrop-blur shadow-2xl space-y-6">
+    <main className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-xl space-y-6">
         <div className="text-center space-y-2">
-          <div className="inline-flex p-3 bg-indigo-500/10 rounded-xl text-indigo-400 mb-2">
+          <div className="inline-flex p-3 bg-indigo-600/10 rounded-xl text-indigo-400 mb-2">
             <Clock className="w-8 h-8" />
           </div>
-          <h1 className="text-2xl font-bold text-white">Daftar Akun Baru</h1>
-          <p className="text-slate-400 text-sm">Buat akun karyawan untuk mengakses sistem absensi</p>
+          <h1 className="text-2xl font-bold text-white">Daftar Akun Absensi</h1>
+          <p className="text-slate-400 text-sm">Buat akun karyawan baru</p>
         </div>
 
-        {message && (
-          <div
-            className={`p-3.5 rounded-lg text-sm flex items-center gap-2 border ${
-              message.type === "success"
-                ? "bg-emerald-950/50 border-emerald-500/50 text-emerald-300"
-                : "bg-rose-950/50 border-rose-500/50 text-rose-300"
-            }`}
-          >
-            {message.type === "success" ? <CheckCircle className="w-4 h-4 flex-shrink-0" /> : <AlertCircle className="w-4 h-4 flex-shrink-0" />}
-            <span>{message.text}</span>
+        {error && (
+          <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm p-3 rounded-lg text-center">
+            {error}
           </div>
         )}
 
-        <form onSubmit={handleRegister} className="space-y-4">
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-400">NAMA LENGKAP</label>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+              Nama Lengkap
+            </label>
             <input
               type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Contoh: Danar Putera"
               required
-              className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition"
+              placeholder="Nama Karyawan"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 transition"
             />
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-400">EMAIL</label>
+          <div>
+            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+              Email
+            </label>
             <input
               type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="nama@email.com"
               required
-              className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition"
+              placeholder="nama@email.com"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 transition"
             />
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-400">PASSWORD</label>
+          <div>
+            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+              Password
+            </label>
             <input
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
               required
-              className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition"
+              placeholder="••••••••••••"
+              value={formData.password}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 transition"
             />
+          </div>
+
+          {/* PILIHAN ROLE BERSIH */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+              Peran / Tim Tugas
+            </label>
+            <select
+              value={formData.role}
+              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 transition"
+            >
+              <option value="packer">Tim Packer</option>
+              <option value="gudang">Tim Gudang</option>
+            </select>
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-medium py-3 rounded-lg flex items-center justify-center gap-2 transition shadow-lg shadow-indigo-600/20"
+            className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 rounded-lg flex items-center justify-center gap-2 transition disabled:opacity-50 mt-2"
           >
-            <UserPlus className="w-4 h-4" /> {loading ? "Mendaftarkan..." : "Daftar Akun"}
+            <UserPlus className="w-4 h-4" />
+            {loading ? "Memproses..." : "Daftar Akun"}
           </button>
         </form>
 
         <div className="text-center text-sm text-slate-400 pt-2 border-t border-slate-800">
           Sudah punya akun?{" "}
-          <Link href="/login" className="text-indigo-400 hover:text-indigo-300 font-medium underline">
+          <Link href="/login" className="text-indigo-400 hover:underline font-medium">
             Login di sini
           </Link>
         </div>

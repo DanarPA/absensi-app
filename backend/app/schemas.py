@@ -1,46 +1,39 @@
-from pydantic import BaseModel, EmailStr
-from datetime import datetime, date
+from pydantic import BaseModel
 from typing import Optional
+from datetime import datetime
 
-# User Schemas
-class UserBase(BaseModel):
+class UserRegister(BaseModel):
     name: str
-    email: EmailStr
-    role: Optional[str] = "employee"
+    email: str
+    password: str
+    role: Optional[str] = "packer"
 
-class UserCreate(UserBase):
+# Tambahkan alias ini untuk mencocokkan UserCreate di auth.py
+UserCreate = UserRegister
+
+class UserLogin(BaseModel):
+    email: str
     password: str
 
-class UserResponse(UserBase):
+LoginRequest = UserLogin
+
+class UserResponse(BaseModel):
     id: int
-    created_at: datetime
+    name: str
+    email: str
+    role: str
+    created_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
 
-# Attendance Schemas
 class ClockInRequest(BaseModel):
     user_id: int
-    notes: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
 
-class AttendanceLogBase(BaseModel):
-    notes: Optional[str] = None
-
-class AttendanceLogResponse(AttendanceLogBase):
-    id: int
+class ClockOutRequest(BaseModel):
     user_id: int
-    date: date
-    clock_in: Optional[datetime] = None
-    clock_out: Optional[datetime] = None
-    status: str
-
-    class Config:
-        from_attributes = True
-
-# Auth Schemas
-class LoginRequest(BaseModel):
-    email: EmailStr
-    password: str
 
 class TokenResponse(BaseModel):
     access_token: str

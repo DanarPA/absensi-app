@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from passlib.context import CryptContext
 from app.database import get_db
 import app.models as models
 import app.schemas as schemas
@@ -9,12 +10,22 @@ router = APIRouter(
     tags=["Authentication"]
 )
 
-# 1. Endpoint Login
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def hash_password(password: str) -> str:
+    return pwd_context.hash(password)
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    # Support backward compatibility jika ada password lama plain text
+    if not hashed_password.startswith("$2b$"):
+        return plain_password == hashed_password
+    return pwd_context.verify(plain_password, hashed_password)
+
 @router.post("/login", response_model=schemas.TokenResponse)
 def login(credentials: schemas.LoginRequest, db: Session = Depends(get_db)):
     user = db.query(models.User).filter(models.User.email == credentials.email).first()
     
-    if not user or user.password_hash != credentials.password:
+    if not user or not verify_password(credentials.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Email atau password salah!"
@@ -25,10 +36,9 @@ def login(credentials: schemas.LoginRequest, db: Session = Depends(get_db)):
         "token_type": "bearer",
         "user_id": user.id,
         "name": user.name,
-        "role": user.role
+        "role": user.role or "employee"
     }
 
-# 2. Endpoint Register Baru
 @router.post("/register", response_model=schemas.UserResponse, status_code=status.HTTP_201_CREATED)
 def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     existing_user = db.query(models.User).filter(models.User.email == user.email).first()
@@ -38,10 +48,11 @@ def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
             detail="Email sudah terdaftar!"
         )
 
+    hashed_pwd = hash_password(user.password)
     new_user = models.User(
         name=user.name,
         email=user.email,
-        password_hash=user.password,
+        password_hash=hashed_pwd,
         role=user.role or "employee"
     )
     db.add(new_user)
