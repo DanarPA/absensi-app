@@ -122,6 +122,16 @@ export default function DashboardPage() {
     router.push("/login");
   };
 
+  // Helper untuk format jam agar konsisten dan tidak bergeser oleh timezone browser
+  const formatTimeStr = (isoString: string | null) => {
+    if (!isoString) return "-";
+    // Jika format mengandung 'T', ambil bagian jamnya langsung
+    if (isoString.includes("T")) {
+      return isoString.split("T")[1]?.slice(0, 8).replace(/:/g, ".") || isoString;
+    }
+    return isoString;
+  };
+
   if (!session) return null;
 
   return (
@@ -169,13 +179,13 @@ export default function DashboardPage() {
             <div className="bg-slate-900/60 border border-slate-800 p-4 rounded-xl">
               <span className="text-slate-400 text-xs block mb-1">Jam Clock In</span>
               <span className="text-xl font-mono font-bold text-emerald-400">
-                {status?.clock_in ? new Date(status.clock_in).toLocaleTimeString() : "-"}
+                {formatTimeStr(status?.clock_in)}
               </span>
             </div>
             <div className="bg-slate-900/60 border border-slate-800 p-4 rounded-xl">
               <span className="text-slate-400 text-xs block mb-1">Jam Clock Out</span>
               <span className="text-xl font-mono font-bold text-rose-400">
-                {status?.clock_out ? new Date(status.clock_out).toLocaleTimeString() : "-"}
+                {formatTimeStr(status?.clock_out)}
               </span>
             </div>
           </div>
@@ -250,10 +260,10 @@ export default function DashboardPage() {
                         <span>{item.date}</span>
                       </td>
                       <td className="p-3 font-mono text-emerald-400">
-                        {item.clock_in ? item.clock_in.split("T")[1]?.slice(0, 8).replace(/:/g, ".") || item.clock_in : "-"}
+                        {formatTimeStr(item.clock_in)}
                       </td>
                       <td className="p-3 font-mono text-rose-400">
-                        {item.clock_out ? item.clock_out.split("T")[1]?.slice(0, 8).replace(/:/g, ".") || item.clock_out : "-"}
+                        {formatTimeStr(item.clock_out)}
                       </td>
                       <td className="p-3">
                         {item.status ? (
