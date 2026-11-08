@@ -4,6 +4,7 @@ from passlib.context import CryptContext
 from app.database import get_db
 import app.models as models
 import app.schemas as schemas
+import re
 
 router = APIRouter(
     prefix="/auth",
@@ -41,6 +42,13 @@ def login(credentials: schemas.LoginRequest, db: Session = Depends(get_db)):
 
 @router.post("/register", response_model=schemas.UserResponse, status_code=status.HTTP_201_CREATED)
 def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
+    # Validasi ketentuan password
+    if len(user.password) < 8 or not re.search(r"[0-9]", user.password) or not re.search(r"[!@#$%^&*(),.?\":{}|<>]", user.password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password harus minimal 8 karakter, mengandung angka, dan simbol."
+        )
+
     existing_user = db.query(models.User).filter(models.User.email == user.email).first()
     if existing_user:
         raise HTTPException(

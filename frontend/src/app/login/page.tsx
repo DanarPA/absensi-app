@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Clock, LogIn } from "lucide-react";
+import { LogIn, Clock, Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -11,12 +11,13 @@ export default function LoginPage() {
     email: "",
     password: "",
   });
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const API_URL = "http://127.0.0.1:8000";
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
@@ -31,18 +32,19 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (res.ok) {
-        // PERBAIKAN: Petakan user_id ke id agar dibaca dengan benar oleh Dashboard
-        const sessionData = {
-          id: data.user_id, // <-- Memastikan field 'id' terisi
-          name: data.name,
-          role: data.role,
-          token: data.access_token,
-        };
+        // Ambil data user, antisipasi jika dibungkus dalam key 'user' atau langsung
+        const sessionData = data.user || data.data || data;
 
+        // Pastikan properti id tersedia (mengantisipasi jika properti bernama user_id)
+        if (!sessionData.id && sessionData.user_id) {
+          sessionData.id = sessionData.user_id;
+        }
+
+        // Simpan sesi user yang valid ke localStorage
         localStorage.setItem("user_session", JSON.stringify(sessionData));
 
-        // Routing berdasarkan role
-        if (data.role === "admin") {
+        // Redirect berdasarkan role
+        if (sessionData.role && sessionData.role.toLowerCase() === "admin") {
           router.push("/admin");
         } else {
           router.push("/dashboard");
@@ -64,10 +66,8 @@ export default function LoginPage() {
           <div className="inline-flex p-3 bg-indigo-600/10 rounded-xl text-indigo-400 mb-2">
             <Clock className="w-8 h-8" />
           </div>
-          <h1 className="text-2xl font-bold text-white">Login Absensi App</h1>
-          <p className="text-slate-400 text-sm">
-            Masuk ke akun pengguna untuk presensi
-          </p>
+          <h1 className="text-2xl font-bold text-white">Login Sistem Absensi</h1>
+          <p className="text-slate-400 text-sm">Masuk untuk melakukan presensi</p>
         </div>
 
         {error && (
@@ -76,18 +76,20 @@ export default function LoginPage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleLogin} className="space-y-4">
           <div>
             <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
               Email
             </label>
             <input
               type="email"
+              name="email"
               required
               placeholder="nama@email.com"
+              autoComplete="off"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 transition"
+              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition"
             />
           </div>
 
@@ -95,14 +97,26 @@ export default function LoginPage() {
             <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
               Password
             </label>
-            <input
-              type="password"
-              required
-              placeholder="••••••••••••"
-              value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 transition"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                required
+                placeholder="••••••••"
+                autoComplete="current-password"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 pr-10 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-3 text-slate-400 hover:text-slate-200 transition"
+                title={showPassword ? "Sembunyikan password" : "Lihat password"}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
 
           <button
@@ -111,7 +125,7 @@ export default function LoginPage() {
             className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 rounded-lg flex items-center justify-center gap-2 transition disabled:opacity-50 mt-2"
           >
             <LogIn className="w-4 h-4" />
-            {loading ? "Memproses..." : "Masuk Akun"}
+            {loading ? "Memproses..." : "Masuk"}
           </button>
         </form>
 

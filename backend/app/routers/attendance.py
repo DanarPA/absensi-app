@@ -5,6 +5,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app import models, schemas
 from app.database import get_db
+from pydantic import BaseModel  # <--- Pastikan baris ini ada
+from typing import Optional
+
 
 router = APIRouter(prefix="/attendance", tags=["Attendance"])
 
@@ -25,6 +28,7 @@ def calculate_distance(lat1, lon1, lat2, lon2):
     a = math.sin(delta_phi / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(delta_lambda / 2) ** 2
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
     return R * c
+
 
 @router.post("/clock-in")
 def clock_in(data: schemas.ClockInRequest, db: Session = Depends(get_db)):

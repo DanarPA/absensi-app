@@ -21,6 +21,9 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState<boolean>(false);
   const [status, setStatus] = useState<{ clock_in: string | null; clock_out: string | null; status: string | null; notes: string | null } | null>(null);
   const [history, setHistory] = useState<AttendanceLogItem[]>([]);
+  
+  // State untuk jam digital real-time WIB
+  const [currentTime, setCurrentTime] = useState<string>("--:--:--");
 
   const API_URL = "http://127.0.0.1:8000";
 
@@ -31,10 +34,35 @@ export default function DashboardPage() {
       return;
     }
     const parsed = JSON.parse(savedSession);
-    setSession(parsed);
-    fetchStatus(parsed.id);
-    fetchHistory(parsed.id);
+    
+    if (parsed && parsed.id) {
+      setSession(parsed);
+      fetchStatus(parsed.id);
+      fetchHistory(parsed.id);
+    } else {
+      router.push("/login");
+    }
   }, [router]);
+
+  // Efek untuk jam digital real-time WIB
+  useEffect(() => {
+    const updateClock = () => {
+      const now = new Date();
+      const options: Intl.DateTimeFormatOptions = {
+        timeZone: "Asia/Jakarta",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+      };
+      const timeString = new Intl.DateTimeFormat("en-GB", options).format(now);
+      setCurrentTime(timeString.replace(/:/g, "."));
+    };
+
+    updateClock();
+    const timer = setInterval(updateClock, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const fetchStatus = (userId: number) => {
     fetch(`${API_URL}/attendance/status/${userId}`)
@@ -46,8 +74,19 @@ export default function DashboardPage() {
   const fetchHistory = (userId: number) => {
     fetch(`${API_URL}/attendance/history/${userId}`)
       .then((res) => res.json())
-      .then((data) => setHistory(data))
-      .catch((err) => console.error("Gagal memuat riwayat:", err));
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setHistory(data);
+        } else if (data && Array.isArray(data.history)) {
+          setHistory(data.history);
+        } else {
+          setHistory([]);
+        }
+      })
+      .catch((err) => {
+        console.error("Gagal memuat riwayat:", err);
+        setHistory([]);
+      });
   };
 
   const handleClockIn = () => {
@@ -85,7 +124,12 @@ export default function DashboardPage() {
       .then(async (res) => {
         const data = await res.json();
         if (!res.ok) throw new Error(data.detail || "Gagal melakukan Clock In");
-        alert(data.message);
+        
+        const successMessage = typeof data === "string" 
+          ? data 
+          : (data.message || data.msg || "Clock In Berhasil");
+        alert(successMessage);
+
         fetchStatus(userId);
         fetchHistory(userId);
       })
@@ -107,7 +151,12 @@ export default function DashboardPage() {
       .then(async (res) => {
         const data = await res.json();
         if (!res.ok) throw new Error(data.detail || "Gagal melakukan Clock Out");
-        alert(data.message);
+        
+        const successMessage = typeof data === "string" 
+          ? data 
+          : (data.message || data.msg || "Clock Out Berhasil");
+        alert(successMessage);
+
         fetchStatus(session.id);
         fetchHistory(session.id);
       })
@@ -122,10 +171,8 @@ export default function DashboardPage() {
     router.push("/login");
   };
 
-  // Helper untuk format jam agar konsisten dan tidak bergeser oleh timezone browser
   const formatTimeStr = (isoString: string | null) => {
     if (!isoString) return "-";
-    // Jika format mengandung 'T', ambil bagian jamnya langsung
     if (isoString.includes("T")) {
       return isoString.split("T")[1]?.slice(0, 8).replace(/:/g, ".") || isoString;
     }
@@ -173,6 +220,14 @@ export default function DashboardPage() {
                 {status.status}
               </span>
             )}
+          </div>
+
+          {/* JAM DIGITAL REAL-TIME WIB */}
+          <div className="bg-indigo-950/40 border border-indigo-500/30 rounded-xl p-4 text-center">
+            <div className="text-xs text-indigo-300 font-medium uppercase tracking-widest mb-1">Waktu Saat Ini (WIB)</div>
+            <div className="text-3xl font-mono font-bold text-indigo-400 tracking-wider">
+              {currentTime}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

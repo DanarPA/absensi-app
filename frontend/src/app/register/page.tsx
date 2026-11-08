@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { UserPlus, Clock } from "lucide-react";
+import { UserPlus, Clock, Eye, EyeOff } from "lucide-react";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -13,6 +13,7 @@ export default function RegisterPage() {
     password: "",
     role: "packer",
   });
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -20,8 +21,19 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
+
+    // Validasi ketentuan password
+    const minLength = formData.password.length >= 8;
+    const hasNumber = /[0-9]/.test(formData.password);
+    const hasSymbol = /[!@#$%^&*(),.?":{}|<>]/.test(formData.password);
+
+    if (!minLength || !hasNumber || !hasSymbol) {
+      setError("Password harus minimal 8 karakter, mengandung angka, dan simbol.");
+      return;
+    }
+
+    setLoading(true);
 
     try {
       const res = await fetch(`${API_URL}/auth/register`, {
@@ -82,11 +94,13 @@ export default function RegisterPage() {
             </label>
             <input
               type="email"
+              name="email"
               required
               placeholder="nama@email.com"
+              autoComplete="off"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 transition"
+              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition"
             />
           </div>
 
@@ -94,17 +108,41 @@ export default function RegisterPage() {
             <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
               Password
             </label>
-            <input
-              type="password"
-              required
-              placeholder="••••••••••••"
-              value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 transition"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                required
+                placeholder="••••••••"
+                autoComplete="new-password"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 pr-10 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-3 text-slate-400 hover:text-slate-200 transition"
+                title={showPassword ? "Sembunyikan password" : "Lihat password"}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+
+            {/* Indikator Real-time */}
+            <div className="mt-2 space-y-1 text-xs">
+              <p className={formData.password.length >= 8 ? "text-emerald-400" : "text-slate-500"}>
+                ✓ Minimal 8 karakter
+              </p>
+              <p className={/[0-9]/.test(formData.password) ? "text-emerald-400" : "text-slate-500"}>
+                ✓ Harus ada angka (0-9)
+              </p>
+              <p className={/[!@#$%^&*(),.?":{}|<>]/.test(formData.password) ? "text-emerald-400" : "text-slate-500"}>
+                ✓ Harus ada simbol (contoh: @, !, #, dll)
+              </p>
+            </div>
           </div>
 
-          {/* PILIHAN ROLE BERSIH */}
           <div>
             <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
               Peran / Tim Tugas
