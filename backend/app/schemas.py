@@ -6,7 +6,7 @@ class UserRegister(BaseModel):
     name: str
     email: str
     password: str
-    role: Optional[str] = "packer"
+    role: Optional[str] = "Employee"
 
 # Tambahkan alias ini untuk mencocokkan UserCreate di auth.py
 UserCreate = UserRegister
