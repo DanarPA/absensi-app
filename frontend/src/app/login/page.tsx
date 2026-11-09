@@ -2,18 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { LogIn, Clock, Eye, EyeOff } from "lucide-react";
+import { LogIn, ShieldAlert } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const API_URL = "http://127.0.0.1:8000";
 
@@ -26,7 +22,7 @@ export default function LoginPage() {
       const res = await fetch(`${API_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ email, password }),
       });
 
       const data = await res.json();
@@ -43,8 +39,10 @@ export default function LoginPage() {
         // Simpan sesi user yang valid ke localStorage
         localStorage.setItem("user_session", JSON.stringify(sessionData));
 
-        // Redirect berdasarkan role
-        if (sessionData.role && sessionData.role.toLowerCase() === "admin") {
+        // Redirect berdasarkan role (Admin dan Payroll masuk ke /admin)
+        const userRole = sessionData.role ? sessionData.role.toLowerCase() : "";
+
+        if (userRole === "admin" || userRole === "payroll") {
           router.push("/admin");
         } else {
           router.push("/dashboard");
@@ -60,18 +58,19 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-xl space-y-6">
-        <div className="text-center space-y-2">
-          <div className="inline-flex p-3 bg-indigo-600/10 rounded-xl text-indigo-400 mb-2">
-            <Clock className="w-8 h-8" />
+    <main className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-4 font-sans">
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 w-full max-w-md shadow-2xl space-y-6">
+        
+        <div className="flex flex-col items-center text-center space-y-2">
+          <div className="bg-indigo-600/10 border border-indigo-500/20 p-3 rounded-2xl text-indigo-400">
+            <ShieldAlert className="w-8 h-8" />
           </div>
-          <h1 className="text-2xl font-bold text-white">Login Sistem Absensi</h1>
-          <p className="text-slate-400 text-sm">Masuk untuk melakukan presensi</p>
+          <h1 className="text-xl font-bold text-white tracking-wide">Login Sistem Presensi</h1>
+          <p className="text-xs text-slate-400">Silakan masuk menggunakan akun terdaftar</p>
         </div>
 
         {error && (
-          <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm p-3 rounded-lg text-center">
+          <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs p-3 rounded-xl text-center">
             {error}
           </div>
         )}
@@ -83,13 +82,11 @@ export default function LoginPage() {
             </label>
             <input
               type="email"
-              name="email"
               required
               placeholder="nama@email.com"
-              autoComplete="off"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition"
             />
           </div>
 
@@ -97,44 +94,25 @@ export default function LoginPage() {
             <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
               Password
             </label>
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                name="password"
-                required
-                placeholder="••••••••"
-                autoComplete="current-password"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 pr-10 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-3 text-slate-400 hover:text-slate-200 transition"
-                title={showPassword ? "Sembunyikan password" : "Lihat password"}
-              >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
+            <input
+              type="password"
+              required
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition"
+            />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 rounded-lg flex items-center justify-center gap-2 transition disabled:opacity-50 mt-2"
+            className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-medium py-3 rounded-xl text-sm transition shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2 mt-2"
           >
-            <LogIn className="w-4 h-4" />
-            {loading ? "Memproses..." : "Masuk"}
+            <LogIn className="w-4 h-4" /> {loading ? "Memproses..." : "Masuk"}
           </button>
         </form>
 
-        <div className="text-center text-sm text-slate-400 pt-2 border-t border-slate-800">
-          Belum punya akun?{" "}
-          <Link href="/register" className="text-indigo-400 hover:underline font-medium">
-            Daftar di sini
-          </Link>
-        </div>
       </div>
     </main>
   );

@@ -41,3 +41,9 @@ class TokenResponse(BaseModel):
     user_id: int
     name: str
     role: str
+
+class UserUpdate(BaseModel):
+    name: Optional[str] = None
+    email: Optional[str] = None
+    role: Optional[str] = None
+    base_salary: Optional[float] = None  # <-- Tambahkan baris ini

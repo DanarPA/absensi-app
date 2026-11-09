@@ -5,21 +5,19 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app import models, schemas
 from app.database import get_db
-from pydantic import BaseModel  # <--- Pastikan baris ini ada
+from pydantic import BaseModel
 from typing import Optional
-
 
 router = APIRouter(prefix="/attendance", tags=["Attendance"])
 
 JAKARTA_TZ = pytz.timezone("Asia/Jakarta")
 
-# Konfigurasi Titik Pusat & Radius untuk Packer (dalam meter)
 PACKER_OFFICE_LAT = -6.1714774
 PACKER_OFFICE_LON = 106.9922184
-MAX_RADIUS_METERS = 100  # Batas toleransi jarak dalam meter (bisa disesuaikan, misal 100m)
+MAX_RADIUS_METERS = 100
 
 def calculate_distance(lat1, lon1, lat2, lon2):
-    R = 6371000  # Radius bumi dalam meter
+    R = 6371000
     phi1 = math.radians(lat1)
     phi2 = math.radians(lat2)
     delta_phi = math.radians(lat2 - lat1)
@@ -32,16 +30,13 @@ def calculate_distance(lat1, lon1, lat2, lon2):
 
 @router.post("/clock-in")
 def clock_in(data: schemas.ClockInRequest, db: Session = Depends(get_db)):
-    # Ambil data user untuk mengecek role-nya
     user = db.query(models.User).filter(models.User.id == data.user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User tidak ditemukan.")
 
-    # Ambil waktu sekarang WIB
     now_jakarta = datetime.now(JAKARTA_TZ)
     today = now_jakarta.date()
     
-    # Cek apakah user sudah absen hari ini
     existing = db.query(models.AttendanceLog).filter(
         models.AttendanceLog.user_id == data.user_id,
         models.AttendanceLog.date == today
@@ -50,7 +45,6 @@ def clock_in(data: schemas.ClockInRequest, db: Session = Depends(get_db)):
     if existing and existing.clock_in:
         raise HTTPException(status_code=400, detail="Anda sudah melakukan Clock In hari ini.")
 
-    # KHUSUS PACKER: Wajib validasi geofencing (radius lokasi)
     if user.role.lower() == "packer":
         if data.latitude is None or data.longitude is None:
             raise HTTPException(status_code=400, detail="GPS tidak aktif. Mohon aktifkan izin lokasi browser Anda.")
@@ -63,15 +57,21 @@ def clock_in(data: schemas.ClockInRequest, db: Session = Depends(get_db)):
                 detail=f"Anda berada di luar area jangkauan gudang! Jarak anda {round(distance)} meter dari titik lokasi."
             )
 
-    # Validasi jam kerja normal (08:00 - 17:00 WIB)
-    current_hour = now_jakarta.hour
-    if current_hour < 8 or current_hour >= 17:
-        status = "Late"
-        notes = "Terlambat (Presensi Dini Hari / Luar Jam Kerja)"
+    # --- ATURAN BARU: Toleransi 15 Menit & Deteksi Luar Jam Kerja ---
+    current_time = now_jakarta.time()
+    jam_masuk_normal = datetime.strptime("08:00:00", "%H:%M:%S").time()
+    batas_toleransi = datetime.strptime("08:15:00", "%H:%M:%S").time()
+    jam_pulang_normal = datetime.strptime("17:00:00", "%H:%M:%S").time()
+
+    if current_time < jam_masuk_normal or current_time > jam_pulang_normal:
+        status = "Lembur"
+        notes = "Presensi di luar jam operasional normal (Lembur / Dini Hari)"
+    elif current_time <= batas_toleransi:
+        status = "On Time"
+        notes = "Hadir tepat waktu (Dalam batas toleransi 15 menit)"
     else:
-        threshold_time = now_jakarta.replace(hour=8, minute=0, second=0, microsecond=0)
-        status = "On Time" if now_jakarta <= threshold_time else "Late"
-        notes = "Tepat waktu" if status == "On Time" else "Terlambat"
+        status = "Late"
+        notes = "Terlambat melewati batas toleransi 08:15"
     
     clean_now = now_jakarta.replace(tzinfo=None)
     

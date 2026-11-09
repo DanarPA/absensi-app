@@ -4,6 +4,7 @@ from app import models
 from app.database import get_db
 from pydantic import BaseModel
 from typing import Optional
+from app.models import User
 import csv
 import io
 
@@ -42,13 +43,11 @@ def delete_attendance(record_id: int, db: Session = Depends(get_db)):
 
 @router.get("/attendance/export-csv")
 def export_attendance_csv(db: Session = Depends(get_db)):
-    # Ambil data log absensi dan join ke tabel User untuk ambil nama & role
     logs = db.query(models.AttendanceLog, models.User).join(models.User, models.AttendanceLog.user_id == models.User.id).order_by(models.AttendanceLog.date.desc()).all()
     
     output = io.StringIO()
     writer = csv.writer(output)
     
-    # Ubah header kolom sesuai kebutuhan
     writer.writerow(["ID", "Nama Karyawan", "Role", "Date", "Clock In", "Clock Out", "Status", "Notes"])
     
     for log, user in logs:
@@ -71,7 +70,6 @@ def export_attendance_csv(db: Session = Depends(get_db)):
 
 @router.get("/users")
 def get_admin_users(db: Session = Depends(get_db)):
-    # Ambil semua data user apa adanya dari database
     users = db.query(models.User).all()
     result = []
     for u in users:
@@ -79,7 +77,8 @@ def get_admin_users(db: Session = Depends(get_db)):
             "id": u.id,
             "name": u.name,
             "email": u.email,
-            "role": u.role
+            "role": u.role,
+            "base_salary": u.base_salary  # <-- Pastikan base_salary disertakan di response API
         })
     return result
 
@@ -94,27 +93,30 @@ def delete_user(user_id: int, db: Session = Depends(get_db)):
     return {"message": "Pengguna berhasil dihapus"}
 
 class UserUpdate(BaseModel):
-    name: str
-    email: str
-    role: str
+    name: Optional[str] = None
+    email: Optional[str] = None
+    role: Optional[str] = None
     password: Optional[str] = None
+    base_salary: Optional[float] = None  # <-- Ditambahkan agar data gaji pokok bisa divalidasi
 
 @router.put("/users/{user_id}")
 def update_user(user_id: int, user_data: UserUpdate, db: Session = Depends(get_db)):
-    user = db.query(models.User).filter(models.User.id == user_id).first()
-    if not user:
+    db_user = db.query(User).filter(User.id == user_id).first()
+    if not db_user:
         raise HTTPException(status_code=404, detail="Pengguna tidak ditemukan")
-    
-    user.name = user_data.name
-    user.email = user_data.email
-    user.role = user_data.role
-    
-    # Jika password diisi dari admin panel, update passwordnya
-    if user_data.password and user_data.password.strip():
-        user.password = user_data.password
-        
+
+    if user_data.name is not None:
+        db_user.name = user_data.name
+    if user_data.email is not None:
+        db_user.email = user_data.email
+    if user_data.role is not None:
+        db_user.role = user_data.role
+    if user_data.base_salary is not None:
+        db_user.base_salary = user_data.base_salary  # <-- Menyimpan perubahan gaji pokok ke database
+
     db.commit()
-    return {"message": "Pengguna berhasil diperbarui"}
+    db.refresh(db_user)
+    return {"message": "Pengguna berhasil diperbarui", "user": db_user}
 
 class UserCreate(BaseModel):
     name: str
@@ -123,17 +125,15 @@ class UserCreate(BaseModel):
 
 @router.post("/users")
 def create_user(user_data: UserCreate, db: Session = Depends(get_db)):
-    # Cek apakah email sudah terdaftar
     existing = db.query(models.User).filter(models.User.email == user_data.email).first()
     if existing:
         raise HTTPException(status_code=400, detail="Email sudah terdaftar")
     
-    # Buat user baru dengan password default '123456'
     new_user = models.User(
         name=user_data.name,
         email=user_data.email,
         role=user_data.role,
-        password="123456" # Password default
+        password="123456"
     )
     db.add(new_user)
     db.commit()

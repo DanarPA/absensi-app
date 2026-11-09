@@ -154,6 +154,7 @@ export default function RegisterPage() {
             >
               <option value="packer">Tim Packer</option>
               <option value="gudang">Tim Gudang</option>
+              <option value="payroll">Tim Payroll</option>
             </select>
           </div>
 
