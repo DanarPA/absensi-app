@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import extract
-from datetime import datetime
+from datetime import datetime, timedelta
 from app.database import get_db
-from app.models import User, AttendanceLog as Attendance
+from app.models import User, AttendanceLog as Attendance, LeaveRequest
 
 router = APIRouter(prefix="/admin/payroll", tags=["Payroll"])
 
@@ -78,12 +78,35 @@ def get_admin_payroll(
                 except Exception as e:
                     print("Error parsing overtime:", e)
 
+        # Ambil data cuti/izin user yang statusnya "Approved" pada bulan & tahun aktif
+        approved_leaves = db.query(LeaveRequest).filter(
+            LeaveRequest.user_id == user.id,
+            LeaveRequest.status == "Approved"
+        ).all()
+
+        total_cuti = 0
+        for leave in approved_leaves:
+            try:
+                delta = leave.end_date - leave.start_date
+                for i in range(delta.days + 1):
+                    day = leave.start_date + timedelta(days=i)
+                    if day.month == month and day.year == year:
+                        total_cuti += 1
+            except Exception as e:
+                print("Error calculating leave days:", e)
+
         base_salary = getattr(user, "base_salary", 3000000) or 3000000
         bonus_on_time = tepat_waktu * 25000
         deduction_late = terlambat * 10000
+
+        # Asumsi standar hari kerja efektif dalam sebulan adalah 22 hari
+        standard_working_days = 22
+        alpha_days = max(0, standard_working_days - (total_hadir + total_cuti))
+        deduction_alpha = int(alpha_days * (base_salary / standard_working_days))
+
         bpjs_kesehatan = base_salary * 0.01
         bpjs_jht = base_salary * 0.02
-        total_potongan = deduction_late + bpjs_kesehatan + bpjs_jht
+        total_potongan = deduction_late + deduction_alpha + bpjs_kesehatan + bpjs_jht
         
         net_salary = base_salary + bonus_on_time + bonus_lembur - total_potongan
 
@@ -94,15 +117,17 @@ def get_admin_payroll(
             "role": user.role,
             "base_salary": base_salary,
             "total_hadir": total_hadir,
+            "total_cuti": total_cuti,
             "tepat_waktu": tepat_waktu,
             "terlambat": terlambat,
             "bonus_on_time": bonus_on_time,
             "bonus_lembur": bonus_lembur,
             "deduction_late": deduction_late,
+            "deduction_alpha": deduction_alpha,
             "bpjs_kesehatan": bpjs_kesehatan,
             "bpjs_jht": bpjs_jht,
             "total_potongan": total_potongan,
-            "net_salary": net_salary
+            "net_salary": max(0, net_salary)
         })
 
     return payroll_results

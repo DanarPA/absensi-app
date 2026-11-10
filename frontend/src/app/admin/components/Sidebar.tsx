@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, BarChart3, CreditCard, ShieldAlert, User, LogOut } from "lucide-react";
+import { LayoutDashboard, Users, BarChart3, CreditCard, ShieldAlert, User, LogOut, CalendarDays } from "lucide-react";
 
 interface SidebarProps {
   session: { name: string; role: string; email: string };
@@ -71,6 +71,14 @@ export default function Sidebar({
             className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition ${activeTab === "salary" ? "bg-indigo-600/10 text-indigo-400 border border-indigo-500/20" : "text-slate-400 hover:bg-slate-800 hover:text-slate-200"}`}
           >
             <CreditCard className="w-4 h-4" /> Penghitungan Gaji
+          </button>
+
+          {/* Menu Manajemen Cuti */}
+          <button
+            onClick={() => setActiveTab("leaves")}
+            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition ${activeTab === "leaves" ? "bg-indigo-600/10 text-indigo-400 border border-indigo-500/20" : "text-slate-400 hover:bg-slate-800 hover:text-slate-200"}`}
+          >
+            <CalendarDays className="w-4 h-4" /> Manajemen Cuti
           </button>
         </nav>
       </div>

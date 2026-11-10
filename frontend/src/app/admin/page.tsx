@@ -10,6 +10,7 @@ import AttendanceTab from "./components/AttendanceTab";
 import UsersTab from "./components/UsersTab";
 import AnalyticsTab from "./components/AnalyticsTab";
 import SalaryTab from "./components/SalaryTab";
+import LeaveTab from "./components/LeaveTab";
 import EditUserModal from "./components/modals/EditUserModal";
 import SalaryModal from "./components/modals/SalaryModal";
 import DetailSalaryModal from "./components/modals/DetailSalaryModal";
@@ -63,7 +64,7 @@ interface AttendanceStatus {
 export default function AdminPage() {
   const router = useRouter();
   const [session, setSession] = useState<{ id: number; name: string; role: string; email: string } | null>(null);
-  const [activeTab, setActiveTab] = useState<"attendance" | "users" | "analytics" | "salary">("attendance");
+  const [activeTab, setActiveTab] = useState<"attendance" | "users" | "analytics" | "salary" | "leaves">("attendance");
   
   const [attendanceList, setAttendanceList] = useState<AttendanceLogItem[]>([]);
   const [userList, setUserList] = useState<UserItem[]>([]);
@@ -119,7 +120,6 @@ export default function AdminPage() {
     }
   }, [router, activeTab]);
 
-  // Otomatis fetch ulang data payroll setiap kali periode bulan atau tahun diubah
   useEffect(() => {
     if (session) {
       fetchPayrollData();
@@ -503,7 +503,15 @@ export default function AdminPage() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900/40 border border-slate-800/80 p-6 rounded-2xl">
           <div>
             <h1 className="text-2xl font-bold text-white">
-              {activeTab === "attendance" ? "Manajemen Kehadiran Karyawan" : activeTab === "users" ? "Daftar Pengguna Sistem" : activeTab === "analytics" ? "Analitik & Grafik Kehadiran" : "Penghitungan Gaji Karyawan"}
+              {activeTab === "attendance" 
+                ? "Manajemen Kehadiran Karyawan" 
+                : activeTab === "users" 
+                ? "Daftar Pengguna Sistem" 
+                : activeTab === "analytics" 
+                ? "Analitik & Grafik Kehadiran" 
+                : activeTab === "leaves" 
+                ? "Manajemen Pengajuan Cuti & Izin" 
+                : "Penghitungan Gaji Karyawan"}
             </h1>
             <p className="text-slate-400 text-sm mt-1">
               {activeTab === "attendance" 
@@ -512,6 +520,8 @@ export default function AdminPage() {
                 ? "Kelola akun dan hak akses pengguna terdaftar." 
                 : activeTab === "analytics"
                 ? "Visualisasi data rekapitulasi dan performa kehadiran staf."
+                : activeTab === "leaves"
+                ? "Setujui atau kelola permohonan cuti dan izin karyawan."
                 : "Hitung rekapitulasi gaji dan insentif berdasarkan data kehadiran."}
             </p>
           </div>
@@ -579,8 +589,12 @@ export default function AdminPage() {
             setTargetUserForSalary={setTargetUserForSalary}
             setCustomBaseSalary={setCustomBaseSalary}
             setIsIndividualSalaryModalOpen={setIsIndividualSalaryModalOpen}
-            isPayroll={isPayroll} // <-- Pastikan prop ini dikirim
+            isPayroll={isPayroll}
           />
+        )}
+
+        {activeTab === "leaves" && (
+          <LeaveTab />
         )}
 
       </div>
