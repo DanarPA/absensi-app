@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine, Base
-from app.routers import auth, attendance, admin, payroll  # Pastikan 'admin' ada di sini
+from app.routers import auth, attendance, admin, payroll
 
 # Membuat tabel database jika belum ada
 Base.metadata.create_all(bind=engine)
@@ -20,8 +20,8 @@ app.add_middleware(
 # Daftarkan Router
 app.include_router(auth.router)
 app.include_router(attendance.router)
-app.include_router(admin.router)  # <-- Pastikan baris ini ada!
-app.include_router(payroll.router)  # <-- Tambahkan baris ini supaya aktif!
+app.include_router(admin.router)
+app.include_router(payroll.router)  # Pastikan baris ini aktif tanpa komentar!
 
 @app.get("/")
 def read_root():

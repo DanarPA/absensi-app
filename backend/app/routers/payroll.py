@@ -1,19 +1,27 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
+from sqlalchemy import extract
 from datetime import datetime
 from app.database import get_db
 from app.models import User, AttendanceLog as Attendance
 
-router = APIRouter(prefix="/payroll", tags=["Payroll"])
+router = APIRouter(prefix="/admin/payroll", tags=["Payroll"])
 
-@router.get("/calculate")
-def calculate_payroll(db: Session = Depends(get_db)):
+@router.get("")
+def get_admin_payroll(
+    month: int = Query(..., description="Bulan aktif"),
+    year: int = Query(..., description="Tahun aktif"),
+    db: Session = Depends(get_db)
+):
     users = db.query(User).all()
     payroll_results = []
 
     for user in users:
+        # Filter absensi berdasarkan user_id serta bulan dan tahun yang dipilih
         logs = db.query(Attendance).filter(
-            Attendance.user_id == user.id
+            Attendance.user_id == user.id,
+            extract('month', Attendance.date) == month,
+            extract('year', Attendance.date) == year
         ).all()
 
         total_hadir = len(logs)
@@ -53,25 +61,19 @@ def calculate_payroll(db: Session = Depends(get_db)):
                     else:
                         out_time = datetime.strptime(str(log.clock_out), "%H:%M:%S")
 
-                    # Deteksi hari (0 = Senin, ..., 5 = Sabtu, 6 = Minggu)
                     log_date = datetime.strptime(str(log.date), "%Y-%m-%d") if log.date else datetime.now()
                     is_weekend = log_date.weekday() == 6 # Hari Minggu
 
-                    # Standar pulang jam 17.00
                     standard_end = out_time.replace(hour=17, minute=0, second=0, microsecond=0)
 
                     if out_time > standard_end:
                         diff_seconds = (out_time - standard_end).total_seconds()
-                        hours_overtime = diff_seconds / 3600  # Dikonversi ke jam
+                        hours_overtime = diff_seconds / 3600
 
                         if is_weekend:
-                            # Tarif lembur Minggu / Weekend: +Rp 25.000 / jam
-                            tarif_per_jam_weekend = 25000
-                            bonus_lembur += int(hours_overtime * tarif_per_jam_weekend)
+                            bonus_lembur += int(hours_overtime * 25000)
                         else:
-                            # Tarif lembur Senin - Sabtu / Weekday: +Rp 10.000 / jam
-                            tarif_per_jam_weekday = 10000
-                            bonus_lembur += int(hours_overtime * tarif_per_jam_weekday)
+                            bonus_lembur += int(hours_overtime * 10000)
 
                 except Exception as e:
                     print("Error parsing overtime:", e)
@@ -83,7 +85,6 @@ def calculate_payroll(db: Session = Depends(get_db)):
         bpjs_jht = base_salary * 0.02
         total_potongan = deduction_late + bpjs_kesehatan + bpjs_jht
         
-        # Total Gaji Bersih
         net_salary = base_salary + bonus_on_time + bonus_lembur - total_potongan
 
         payroll_results.append({
@@ -104,4 +105,4 @@ def calculate_payroll(db: Session = Depends(get_db)):
             "net_salary": net_salary
         })
 
-    return {"payroll_data": payroll_results}
+    return payroll_results
