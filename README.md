@@ -99,7 +99,7 @@ Ikuti langkah-langkah di bawah ini untuk menjalankan proyek secara lokal di pera
 1. cd backend
 2. python -m venv venv
 3. Aktifkan virtual environment:
-    *Windows (cmd/powershell): .\venv\Scripts\activate
+    * Windows (cmd/powershell): .\venv\Scripts\activate
     * Mac/Linux: source venv/bin/activate
 
 4. pip install -r requirements.txt
