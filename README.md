@@ -91,16 +91,16 @@ absensi-app/
 Ikuti langkah-langkah di bawah ini untuk menjalankan proyek secara lokal di perangkatmu:
 
 ### 1. Clone Repository
-```bash
+
 git clone [https://github.com/DanarPA/absensi-app.git](https://github.com/DanarPA/absensi-app.git)
 cd absensi-app
 
 ### 2. Jalankan Backend (FastAPI)
 cd backend
 python -m venv venv
-# Aktifkan virtual environment:
-# Windows (cmd/powershell): .\venv\Scripts\activate
-# Mac/Linux: source venv/bin/activate
+Aktifkan virtual environment:
+Windows (cmd/powershell): .\venv\Scripts\activate
+Mac/Linux: source venv/bin/activate
 
 pip install -r requirements.txt
 uvicorn app.main:app --reload
