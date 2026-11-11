@@ -92,30 +92,29 @@ Ikuti langkah-langkah di bawah ini untuk menjalankan proyek secara lokal di pera
 
 ### 1. Clone Repository
 
-git clone [https://github.com/DanarPA/absensi-app.git](https://github.com/DanarPA/absensi-app.git)
-cd absensi-app
+1. git clone [https://github.com/DanarPA/absensi-app.git](https://github.com/DanarPA/absensi-app.git)
+2. cd absensi-app
 
 ### 2. Jalankan Backend (FastAPI)
-cd backend
-python -m venv venv
-Aktifkan virtual environment:
+1. cd backend
+2. python -m venv venv
+3. Aktifkan virtual environment:
 Windows (cmd/powershell): .\venv\Scripts\activate
 Mac/Linux: source venv/bin/activate
 
-pip install -r requirements.txt
-uvicorn app.main:app --reload
-
+4. pip install -r requirements.txt
+5. uvicorn app.main:app --reload
 Backend akan berjalan di http://127.0.0.1:8000
 
 ### 3. Jalankan Frontend (Next.js)
-cd frontend
-npm install
-npm run dev
+1. cd frontend
+2. npm install
+3. npm run dev
 
 ## 🛡️ Security & Best Practices
-### 1. Menerapkan file .gitignore yang ketat untuk mencegah kebocoran kredensial sensitif (.env, direktori node_modules/, venv/, dan file cache lokal).
+1. Menerapkan file .gitignore yang ketat untuk mencegah kebocoran kredensial sensitif (.env, direktori node_modules/, venv/, dan file cache lokal).
 
-### 2. Pemisahan tanggung jawab (separation of concerns) yang jelas antara logika client-side dan server-side REST API.
+2. Pemisahan tanggung jawab (separation of concerns) yang jelas antara logika client-side dan server-side REST API.
 
 ## 👤 Author
 Danar Putera Andika
