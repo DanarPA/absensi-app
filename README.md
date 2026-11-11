@@ -42,6 +42,26 @@ Aplikasi manajemen kehadiran (*attendance*), pengajuan cuti mandiri (*self-servi
 
 ---
 
+## 📸 Tampilan Aplikasi
+
+### 1. Dashboard Presensi Utama
+Antarmuka utama karyawan yang menyajikan informasi status kehadiran harian secara *real-time* dengan sinkronisasi zona waktu WIB. Dilengkapi tombol aksi cepat untuk *Clock In* / *Clock Out* serta tabel riwayat absensi komprehensif yang memuat indikator status kerja seperti keterlambatan (*Late*), lembur (*Overtime*), dan tautan validasi titik koordinat GPS (*Cek Peta*).
+![Dashboard Presensi](screenshots/dashboard.png)
+
+### 2. Form Pengajuan Cuti & Izin Karyawan
+Modul layanan mandiri (*Self-Service*) bagi karyawan untuk mengajukan permohonan cuti tahunan, sakit, atau izin secara digital. Dilengkapi formulir pemilihan rentang tanggal dan keterangan alasan, serta tabel pantauan status pengajuan secara transparan (*Pending*, *Approved*, atau *Rejected*).
+![Form Cuti](screenshots/cuti.png)
+
+### 3. Rincian Komponen Gaji (Payroll Modal)
+Fitur kalkulasi gaji otomatis dan transparan yang merinci komponen finansial karyawan secara akurat. Mencakup akumulasi gaji pokok berdasarkan total kehadiran, bonus tepat waktu dan lembur, potongan denda keterlambatan dan iuran BPJS, perhitungan total gaji bersih (*Net Salary*), serta fitur unduh slip gaji berformat PDF.
+![Payroll Modal](screenshots/payroll.png)
+
+### 4. Manajemen Pengajuan Cuti Admin (Payroll Panel)
+Panel kendali terpusat khusus *admin* dan tim *payroll* untuk mengawasi, menyetujui, atau menolak permohonan cuti dan izin dari seluruh karyawan secara *real-time* guna memastikan integritas data absensi sebelum kalkulasi penggajian diproses.
+![Admin Panel](screenshots/admin.png)
+
+---
+
 ## 📂 Project Structure
 
 ```text
@@ -58,5 +78,44 @@ absensi-app/
 │   ├── src/app/              # App Router Pages (dashboard, admin, login)
 │   └── package.json          # Node Dependencies
 │
+├── screenshots/              # Application UI Previews
+│
 ├── docker-compose.yml        # Docker orchestration config
 └── .gitignore
+
+---
+
+## 🛠️ Getting Started Locally
+
+Ikuti langkah-langkah di bawah ini untuk menjalankan proyek secara lokal di perangkatmu:
+
+### 1. Clone Repository
+```bash
+git clone [https://github.com/DanarPA/absensi-app.git](https://github.com/DanarPA/absensi-app.git)
+cd absensi-app
+
+### 2. Jalankan Backend (FastAPI)
+cd backend
+python -m venv venv
+# Aktifkan virtual environment:
+# Windows (cmd/powershell): .\venv\Scripts\activate
+# Mac/Linux: source venv/bin/activate
+
+pip install -r requirements.txt
+uvicorn app.main:app --reload
+
+Backend akan berjalan di http://127.0.0.1:8000
+
+### 3. Jalankan Frontend (Next.js)
+cd frontend
+npm install
+npm run dev
+
+## 🛡️ Security & Best Practices
+### 1. Menerapkan file .gitignore yang ketat untuk mencegah kebocoran kredensial sensitif (.env, direktori node_modules/, venv/, dan file cache lokal).
+
+### 2. Pemisahan tanggung jawab (separation of concerns) yang jelas antara logika client-side dan server-side REST API.
+
+## 👤 Author
+Danar Putera Andika
+### GitHub: @DanarPA
