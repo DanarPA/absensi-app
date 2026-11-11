@@ -99,12 +99,12 @@ Ikuti langkah-langkah di bawah ini untuk menjalankan proyek secara lokal di pera
 1. cd backend
 2. python -m venv venv
 3. Aktifkan virtual environment:
-* Windows (cmd/powershell): .\venv\Scripts\activate
-* Mac/Linux: source venv/bin/activate
+    *Windows (cmd/powershell): .\venv\Scripts\activate
+    * Mac/Linux: source venv/bin/activate
 
 4. pip install -r requirements.txt
 5. uvicorn app.main:app --reload
-* Backend akan berjalan di http://127.0.0.1:8000
+    * Backend akan berjalan di http://127.0.0.1:8000
 
 ### 3. Jalankan Frontend (Next.js)
 1. cd frontend
